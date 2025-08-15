@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-list-check"></i> Create New Grocery List</h4>
+            </div>
+            <div class="card-body">
+                <!-- Date and Time Display -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Date & Time:</strong></label>
+                        <input type="text" class="form-control" id="currentDateTime" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Delivery Address:</strong></label>
+                        <textarea class="form-control" id="deliveryAddress" rows="2" placeholder="Enter delivery address..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Quick Add from Common Items -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label"><strong>Quick Add Common Items:</strong></label>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="toggleEditMode()">
+                                    <i class="fas fa-edit"></i> <span id="editModeText">Edit Items</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="showAddItemModal()">
+                                    <i class="fas fa-plus"></i> Add New
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row" id="commonItemsContainer">
+                            <!-- Common items will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Item Addition -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Add Custom Item:</strong></label>
+                        <input type="text" class="form-control" id="customItemName" placeholder="Item name...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Quantity:</strong></label>
+                        <input type="number" class="form-control" id="customItemQuantity" value="1" min="1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Price (₹):</strong></label>
+                        <input type="number" class="form-control" id="customItemPrice" step="0.01" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-primary d-block w-100" onclick="addCustomItem()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shopping List -->
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-shopping-basket"></i> Your Shopping List</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th width="50">✓</th>
+                                        <th>Item</th>
+                                        <th width="100">Qty</th>
+                                        <th width="100">Price (₹)</th>
+                                        <th width="120">Total (₹)</th>
+                                        <th width="80">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shoppingList">
+                                    <tr id="emptyRow">
+                                        <td colspan="6" class="text-center text-muted">
+                                            <i class="fas fa-cart-plus fa-2x"></i><br>
+                                            No items added yet. Add some items to get started!
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Totals Section -->
+                        <div class="total-section" id="totalSection" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Total Items: <span id="totalItems">0</span></h5>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <h4>Grand Total: <span class="text-success">₹<span id="grandTotal">0.00</span></span></h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row mt-4 no-print">
+                            <div class="col-md-12 text-center">
+                                <button type="button" class="btn btn-success btn-lg me-2" onclick="saveList()">
+                                    <i class="fas fa-save"></i> Save List
+                                </button>
+                                <button type="button" class="btn btn-info btn-lg me-2" onclick="window.print()">
+                                    <i class="fas fa-print"></i> Print List
+                                </button>
+                                <button type="button" class="btn btn-warning btn-lg me-2" onclick="clearList()">
+                                    <i class="fas fa-trash"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Common Item Modal -->
+<div class="modal fade" id="addEditItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-plus"></i> Add New Common Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    <input type="hidden" id="editItemId" value="">
+                    <div class="mb-3">
+                        <label for="editItemName" class="form-label">Item Name:</label>
+                        <input type="text" class="form-control" id="editItemName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editItemPrice" class="form-label">Default Price (₹):</label>
+                        <input type="number" class="form-control" id="editItemPrice" step="0.01" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCommonItem()">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Success!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your grocery list has been saved successfully!</p>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary me-2" onclick="downloadPDF()">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let shoppingItems = [];
+let commonItems = [];
+let lastSavedListId = null;
+let editMode = false;
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', function() {
+    updateDateTime();
+    loadCommonItems();
+    setInterval(updateDateTime, 1000); // Update time every second
+});
+
+function updateDateTime() {
+    const now = new Date();
+    const formatted = now.toLocaleString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('currentDateTime').value = formatted;
+}
+
+async function loadCommonItems() {
+    try {
+        const response = await fetch('/get_common_items');
+        commonItems = await response.json();
+        displayCommonItems();
+    } catch (error) {
+        console.error('Error loading common items:', error);
+    }
+}
+
+function displayCommonItems() {
+    const container = document.getElementById('commonItemsContainer');
+    container.innerHTML = '';
+    
+    commonItems.forEach(item => {
+        const col = document.createElement('div');
+        col.className = 'col-md-3 col-sm-6 mb-2';
+        
+        if (editMode) {
+            col.innerHTML = `
+                <div class="card border-primary">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <small class="text-muted">ID: ${item.id}</small><br>
+                                <strong>${item.name}</strong><br>
+                                <span class="text-success">₹${item.price}</span>
+                            </div>
+                            <div class="btn-group-vertical btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                        onclick="editCommonItem(${item.id}, '${item.name}', ${item.price})" 
+                                        title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteCommonItem(${item.id})" 
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            col.innerHTML = `
+                <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                        onclick="addCommonItem('${item.name}', ${item.price})">
+                    <i class="fas fa-plus-circle"></i> ${item.name} (₹${item.price})
+                </button>
+            `;
+        }
+        container.appendChild(col);
+    });
+}
+
+function toggleEditMode() {
+    editMode = !editMode;
+    const editModeText = document.getElementById('editModeText');
+    
+    if (editMode) {
+        editModeText.textContent = 'Exit Edit';
+        editModeText.parentElement.className = 'btn btn-warning btn-sm me-2';
+    } else {
+        editModeText.textContent = 'Edit Items';
+        editModeText.parentElement.className = 'btn btn-outline-primary btn-sm me-2';
+    }
+    
+    displayCommonItems();
+}
+
+function showAddItemModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus"></i> Add New Common Item';
+    document.getElementById('editItemId').value = '';
+    document.getElementById('editItemName').value = '';
+    document.getElementById('editItemPrice').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('addEditItemModal'));
+    modal.show();
+}
+
+function editCommonItem(id, name, price) {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Common Item';
+    document.getElementById('editItemId').value = id;
+    document.getElementById('editItemName').value = name;
+    document.getElementById('editItemPrice').value = price;
+    
+    const modal = new bootstrap.Modal(document.getElementById('addEditItemModal'));
+    modal.show();
+}
+
+async function saveCommonItem() {
+    const id = document.getElementById('editItemId').value;
+    const name = document.getElementById('editItemName').value.trim();
+    const price = parseFloat(document.getElementById('editItemPrice').value);
+    
+    if (!name || !price || price <= 0) {
+        alert('Please enter valid item name and price');
+        return;
+    }
+    
+    try {
+        let url, method, data;
+        
+        if (id) {
+            // Update existing item
+            url = '/update_common_item';
+            data = { id: parseInt(id), name: name, price: price };
+        } else {
+            // Add new item
+            url = '/add_common_item';
+            data = { name: name, price: price };
+        }
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addEditItemModal'));
+            modal.hide();
+            
+            // Reload common items
+            await loadCommonItems();
+            
+            // Show success message
+            const action = id ? 'updated' : 'added';
+            alert(`Item ${action} successfully!`);
+        } else {
+            alert(`Error: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Error saving item:', error);
+        alert('Error saving item');
+    }
+}
+
+async function deleteCommonItem(id) {
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/delete_common_item', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: id })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            await loadCommonItems();
+            alert('Item deleted successfully!');
+        } else {
+            alert(`Error: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Error deleting item');
+    }
+}
+
+function addCommonItem(name, price) {
+    addItemToList(name, 1, price);
+}
+
+function addCustomItem() {
+    const name = document.getElementById('customItemName').value.trim();
+    const quantity = parseInt(document.getElementById('customItemQuantity').value) || 1;
+    const price = parseFloat(document.getElementById('customItemPrice').value) || 0;
+    
+    if (!name) {
+        alert('Please enter item name');
+        return;
+    }
+    
+    if (price <= 0) {
+        alert('Please enter a valid price');
+        return;
+    }
+    
+    addItemToList(name, quantity, price);
+    
+    // Clear form
+    document.getElementById('customItemName').value = '';
+    document.getElementById('customItemQuantity').value = '1';
+    document.getElementById('customItemPrice').value = '';
+}
+
+function addItemToList(name, quantity, price) {
+    // Check if item already exists
+    const existingIndex = shoppingItems.findIndex(item => item.name === name);
+    
+    if (existingIndex !== -1) {
+        // Update existing item
+        shoppingItems[existingIndex].quantity += quantity;
+        shoppingItems[existingIndex].total = shoppingItems[existingIndex].quantity * shoppingItems[existingIndex].price;
+    } else {
+        // Add new item
+        const item = {
+            name: name,
+            quantity: quantity,
+            price: price,
+            total: quantity * price,
+            checked: false
+        };
+        shoppingItems.push(item);
+    }
+    
+    updateShoppingList();
+}
+
+function updateShoppingList() {
+    const tbody = document.getElementById('shoppingList');
+    const emptyRow = document.getElementById('emptyRow');
+    
+    if (shoppingItems.length === 0) {
+        emptyRow.style.display = 'table-row';
+        document.getElementById('totalSection').style.display = 'none';
+        return;
+    }
+    
+    emptyRow.style.display = 'none';
+    document.getElementById('totalSection').style.display = 'block';
+    
+    // Clear existing items (except empty row)
+    while (tbody.children.length > 1) {
+        tbody.removeChild(tbody.lastChild);
+    }
+    
+    // Add items
+    shoppingItems.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="form-check-input checkbox-large" 
+                       ${item.checked ? 'checked' : ''} 
+                       onchange="toggleItem(${index})">
+            </td>
+            <td>${item.name}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm" 
+                       value="${item.quantity}" min="1" 
+                       onchange="updateQuantity(${index}, this.value)">
+            </td>
+            <td>₹${item.price.toFixed(2)}</td>
+            <td><strong>₹${item.total.toFixed(2)}</strong></td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" 
+                        onclick="removeItem(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateTotals();
+}
+
+function toggleItem(index) {
+    shoppingItems[index].checked = !shoppingItems[index].checked;
+}
+
+function updateQuantity(index, quantity) {
+    const qty = parseInt(quantity) || 1;
+    shoppingItems[index].quantity = qty;
+    shoppingItems[index].total = qty * shoppingItems[index].price;
+    updateShoppingList();
+}
+
+function removeItem(index) {
+    shoppingItems.splice(index, 1);
+    updateShoppingList();
+}
+
+function updateTotals() {
+    const totalItems = shoppingItems.reduce((sum, item) => sum + item.quantity, 0);
+    const grandTotal = shoppingItems.reduce((sum, item) => sum + item.total, 0);
+    
+    document.getElementById('totalItems').textContent = totalItems;
+    document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+}
+
+async function saveList() {
+    if (shoppingItems.length === 0) {
+        alert('Please add at least one item to save the list');
+        return;
+    }
+    
+    const data = {
+        date: document.getElementById('currentDateTime').value,
+        address: document.getElementById('deliveryAddress').value,
+        items: shoppingItems,
+        total: shoppingItems.reduce((sum, item) => sum + item.total, 0)
+    };
+    
+    try {
+        const response = await fetch('/save_list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            lastSavedListId = result.list_id;
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+        } else {
+            alert('Error saving list');
+        }
+    } catch (error) {
+        console.error('Error saving list:', error);
+        alert('Error saving list');
+    }
+}
+
+function downloadPDF() {
+    if (lastSavedListId) {
+        window.open(`/generate_pdf/${lastSavedListId}`, '_blank');
+    }
+}
+
+function clearList() {
+    if (shoppingItems.length > 0 && confirm('Are you sure you want to clear all items?')) {
+        shoppingItems = [];
+        updateShoppingList();
+        document.getElementById('deliveryAddress').value = '';
+    }
+}
+</script>
+{% endblock %}
