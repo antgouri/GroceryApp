@@ -11,6 +11,8 @@ A comprehensive web-based grocery shopping list application built with Flask and
 
 ![Grocery App Demo](https://via.placeholder.com/800x400/28a745/ffffff?text=Grocery+Checklist+App+Demo)
 
+PS: All the html files should be inside the templates folder - note this project structure 
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
